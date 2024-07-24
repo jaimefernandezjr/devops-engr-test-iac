@@ -77,9 +77,3 @@ resource "aws_instance" "app" {
     Name = "REST API Service"
   }
 }
-
-
-  tags = {
-    Name = "REST API Service"
-  }
-} 
