@@ -62,7 +62,9 @@ resource "aws_autoscaling_group" "app" {
   min_size             = 2
   max_size             = 4
   desired_capacity     = 2
-  vpc_zone_identifier  = data.aws_vpc.default.subnets
+  vpc_zone_identifier  = [data.aws_vpc.default.id]
+  health_check_type    = "EC2"
+  health_check_grace_period = 300
 
   tag {
     key                 = "Name"
@@ -70,8 +72,8 @@ resource "aws_autoscaling_group" "app" {
     propagate_at_launch = true
   }
 
-  lifecycle {
-    create_before_destroy = true
+  load_balancer {
+    arn = aws_elb.my_elb.id
   }
 }
 
