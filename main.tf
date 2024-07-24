@@ -6,8 +6,18 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnet" "default_subnet_1" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_subnet" "default_subnet_2" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 variable "public_ssh_key" {
@@ -93,7 +103,7 @@ resource "aws_autoscaling_group" "app" {
   min_size             = 2
   max_size             = 4
   desired_capacity     = 2
-  vpc_zone_identifier  = data.aws_subnet_ids.default.ids
+  vpc_zone_identifier  = [data.aws_subnet.default_subnet_1.id, data.aws_subnet.default_subnet_2.id]
 
   tag {
     key                 = "Name"
@@ -112,7 +122,7 @@ resource "aws_autoscaling_group" "app" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaime-load-balancer"
+  name               = "main-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -137,7 +147,7 @@ resource "aws_elb" "main" {
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaime-load-balancer"
+    Name = "main-load-balancer"
   }
 }
 
