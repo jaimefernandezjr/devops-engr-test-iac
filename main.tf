@@ -23,7 +23,7 @@ resource "aws_security_group" "allow_http" {
 }
 
 resource "aws_instance" "app" {
-  ami           = "ami-0c55b159cbfafe1f0" # Amazon Linux 2 AMI
+  ami           = "ami-012c2e8e24e2ae21d" # Amazon Linux 2 AMI
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
