@@ -46,10 +46,11 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
               #!/bin/bash
               yum update -y
-              amazon-linux-extras install docker -y
-              service docker start
-              usermod -a -G docker ec2-user
-              docker run -d -p 3000:3000 --name rest-api-service YOUR_DOCKERHUB_USERNAME/devops-test-rest-api-service:latest
+              yum install -y docker
+              systemctl start docker
+              systemctl enable docker
+              usermod -aG docker ec2-user
+              docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
               EOF
 
   tags = {
