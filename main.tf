@@ -1,19 +1,11 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-
-  tags = {
-    Name = "main-vpc"
-  }
+data "aws_vpc" "default" {
+  default = true
 }
 
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound traffic"
-  vpc_id      = aws_vpc.main.id  # Use the VPC ID
+  vpc_id      = data.aws_vpc.default.id  # Reference the default VPC ID
 
   ingress {
     from_port   = 3000
