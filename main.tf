@@ -108,4 +108,8 @@ resource "aws_elb" "main" {
   provisioner "local-exec" {
     command = "ansible-playbook -i ${self.private_ip}, playbook.yml"
   }
+
+  output "instance_private_ips" {
+    value = aws_instance.app[*].private_ip
+  }
 }
