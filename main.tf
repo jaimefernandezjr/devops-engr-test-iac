@@ -53,34 +53,7 @@ resource "aws_launch_configuration" "app" {
   user_data = <<-EOF
               #!/bin/bash
               set -e
-
-              echo "Updating system packages..."
-              sudo yum update -y
-
-              echo "Installing Docker..."
-              sudo yum install -y docker
-
-              echo "Starting Docker service..."
-              sudo systemctl start docker
-              sudo systemctl enable docker
-
-              echo "Adding ec2-user to Docker group..."
-              sudo usermod -aG docker ec2-user
-
-              echo "Running Docker container..."
-              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
-
-              echo "Adding instance identifier..."
-              echo "This is instance \$(curl -s http://169.254.169.254/latest/meta-data/instance-id)" > /var/www/html/index.html
-
-              echo "Checking Docker status..."
-              sudo systemctl status docker
-
-              echo "Checking running containers..."
-              sudo docker ps
-
-              echo "Checking Docker container logs..."
-              sudo docker logs rest-api-service
+              echo "Provisioning complete. Ansible will now configure the instance."
               EOF
 }
 
@@ -130,5 +103,9 @@ resource "aws_elb" "main" {
 
   tags = {
     Name = "jaime-load-balancer"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i ${self.private_ip}, playbook.yml"
   }
 }
