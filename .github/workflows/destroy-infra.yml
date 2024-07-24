@@ -19,6 +19,9 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
+    - name: Terraform Plan
+      run: terraform plan
+
     - name: Terraform Destroy
       run: terraform destroy -auto-approve
       env:
