@@ -1,6 +1,16 @@
+provider "aws" {
+  region = "ap-southeast-1"
+}
+
 data "aws_vpc" "default" {
   default = true
 }
+
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = file("path/to/your/public/keyfile.pub")  # Ensure this path is correct
+}
+
 
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
