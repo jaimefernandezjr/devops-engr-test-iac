@@ -11,12 +11,26 @@ variable "public_ssh_key" {
   type        = string
 }
 
+data "aws_key_pair" "existing_key_pair" {
+  key_name = "deployer-key"
+}
+
 resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
+  count     = length(data.aws_key_pair.existing_key_pair.id) == 0 ? 1 : 0
+  key_name  = "deployer-key"
   public_key = var.public_ssh_key
 }
 
+data "aws_security_group" "existing_sg" {
+  filter {
+    name   = "group-name"
+    values = ["allow_http5"]
+  }
+  vpc_id = data.aws_vpc.default.id
+}
+
 resource "aws_security_group" "allow_http5" {
+  count       = length(data.aws_security_group.existing_sg.id) == 0 ? 1 : 0
   name        = "allow_http5"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
@@ -39,9 +53,9 @@ resource "aws_security_group" "allow_http5" {
 resource "aws_instance" "app" {
   ami           = "ami-012c2e8e24e2ae21d"  # Verify the AMI ID for your region
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = length(data.aws_key_pair.existing_key_pair.id) == 0 ? aws_key_pair.deployer[0].key_name : data.aws_key_pair.existing_key_pair.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http5.id]
+  vpc_security_group_ids = length(data.aws_security_group.existing_sg.id) == 0 ? [aws_security_group.allow_http5[0].id] : [data.aws_security_group.existing_sg.id]
 
   user_data = <<-EOF
               #!/bin/bash
