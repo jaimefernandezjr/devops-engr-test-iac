@@ -22,7 +22,7 @@ jobs:
 
       - name: Create S3 bucket
         run: |
-          aws s3api create-bucket --bucket devops-test-tfstate-bucket --region ap-southeast-2 --create-bucket-configuration LocationConstraint=ap-southeast-2 || echo "Bucket might already exist."
+          aws s3api create-bucket --bucket devops-test-tfstate-bucket --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
 
       - name: Create DynamoDB table
         run: |
@@ -31,7 +31,7 @@ jobs:
             --attribute-definitions AttributeName=LockID,AttributeType=S \
             --key-schema AttributeName=LockID,KeyType=HASH \
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-            --region ap-southeast-2 || echo "Table might already exist."
+            --region ap-southeast-1 || echo "Table might already exist."
 
   deploy:
     runs-on: ubuntu-latest
