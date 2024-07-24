@@ -2,7 +2,7 @@ terraform {
   backend "s3" {
     bucket         = "devops-test-tfstate-bucket"
     key            = "terraform/statefile.tfstate"
-    region         = "ap-southeast-2"
+    region         = "ap-southeast-1"
     dynamodb_table = "terraform-locks"
   }
 }
