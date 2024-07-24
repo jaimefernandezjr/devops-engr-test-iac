@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http4" {
-  name        = "allow_http4"
+resource "aws_security_group" "allow_http2" {
+  name        = "allow_http2"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -43,42 +43,73 @@ resource "aws_security_group" "allow_http4" {
   }
 }
 
-resource "aws_launch_configuration" "app" {
-  name          = "app-launch-configuration"
-  image_id      = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
+resource "aws_instance" "app1" {
+  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
-  security_groups = [aws_security_group.allow_http4.id]
+
+  vpc_security_group_ids = [aws_security_group.allow_http2.id]
 
   user_data = <<-EOF
               #!/bin/bash
               set -e
-              echo "Provisioning complete. Ansible will now configure the instance."
+
+              echo "Updating system packages..."
+              sudo yum update -y
+
+              echo "Installing Docker..."
+              sudo yum install -y docker
+
+              echo "Starting Docker service..."
+              sudo systemctl start docker
+              sudo systemctl enable docker
+
+              echo "Adding ec2-user to Docker group..."
+              sudo usermod -aG docker ec2-user
+
+              echo "Running Docker container..."
+              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+
+              echo "Adding instance identifier..."
+              echo "This is instance 1" > /var/www/html/index.html
+
+              echo "Checking Docker status..."
+              sudo systemctl status docker
+
+              echo "Checking running containers..."
+              sudo docker ps
+
+              echo "Checking Docker container logs..."
+              sudo docker logs rest-api-service
               EOF
+
+  tags = {
+    Name = "REST API Service 1"
+  }
 }
 
-resource "aws_autoscaling_group" "app" {
-  launch_configuration = aws_launch_configuration.app.id
-  min_size             = 2
-  max_size             = 4
-  desired_capacity     = 2
-  vpc_zone_identifier  = [data.aws_vpc.default.id]
-  health_check_type    = "EC2"
-  health_check_grace_period = 300
+resource "aws_instance" "app2" {
+  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
+  instance_type = "t2.micro"
+  key_name      = aws_key_pair.deployer.key_name
 
-  tag {
-    key                 = "Name"
-    value               = "REST API Service"
-    propagate_at_launch = true
-  }
+  vpc_security_group_ids = [aws_security_group.allow_http2.id]
 
-  load_balancer {
-    arn = aws_elb.my_elb.id
+  user_data = <<-EOF
+              #!/bin/bash
+              set -e
+
+              echo "Provisioning complete. Ansible will configure the resources"
+              
+              EOF
+
+  tags = {
+    Name = "REST API Service 2"
   }
 }
 
 resource "aws_elb" "main" {
-  name               = "jaime-load-balancer"
+  name               = "main-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -96,16 +127,17 @@ resource "aws_elb" "main" {
     unhealthy_threshold = 2
   }
 
-  instances                   = aws_autoscaling_group.app.instances
-  security_groups             = [aws_security_group.allow_http4.id]
+  instances                   = [aws_instance.app1.id, aws_instance.app2.id]
+  security_groups             = [aws_security_group.allow_http2.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaime-load-balancer"
+    Name = "main-load-balancer"
   }
+}
 
   provisioner "local-exec" {
     command = "ansible-playbook -i ${self.private_ip}, playbook.yml"
