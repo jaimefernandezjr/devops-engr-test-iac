@@ -111,13 +111,11 @@ resource "aws_autoscaling_group" "app" {
     propagate_at_launch = true
   }
 
+  # Attach the Auto Scaling group to the ELB
+  load_balancer_names = [aws_elb.main.name]
+
   lifecycle {
     create_before_destroy = true
-  }
-
-  # Attach the Auto Scaling group to the ELB
-  load_balancer {
-    name = aws_elb.main.name
   }
 }
 
