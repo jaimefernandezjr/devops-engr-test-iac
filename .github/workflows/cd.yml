@@ -22,7 +22,7 @@ jobs:
 
       - name: Create S3 bucket
         run: |
-          aws s3api create-bucket --bucket devops-test-tfstate-bucket --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
+          aws s3api create-bucket --bucket devops-test-tfstate-bucket1 --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
 
       - name: Create DynamoDB table
         run: |
