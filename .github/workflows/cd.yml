@@ -41,9 +41,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install AWS CLI
-        run: sudo apt-get install -y awscli
-
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v1
         with:
