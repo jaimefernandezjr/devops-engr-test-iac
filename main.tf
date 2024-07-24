@@ -13,7 +13,7 @@ resource "aws_vpc" "main" {
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound traffic"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id  # Use the VPC ID
 
   ingress {
     from_port   = 3000
@@ -49,8 +49,4 @@ resource "aws_instance" "app" {
   tags = {
     Name = "REST API Service"
   }
-}
-
-output "instance_public_ip" {
-  value = aws_instance.app.public_ip
 }
