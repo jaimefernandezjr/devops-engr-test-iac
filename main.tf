@@ -1,5 +1,14 @@
+terraform {
+  backend "s3" {
+    bucket         = "devops-test-tfstate-bucket"
+    key            = "terraform/statefile.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "terraform-locks"
+  }
+}
+
 provider "aws" {
-  region = "ap-southeast-1"
+  region = "ap-southeast-1"  # Ensure this is the correct region for your resources
 }
 
 data "aws_vpc" "default" {
@@ -9,7 +18,6 @@ data "aws_vpc" "default" {
 variable "public_ssh_key" {
   description = "Public SSH key for EC2 key pair"
   type        = string
-  default     = ""
 }
 
 resource "aws_key_pair" "deployer" {
@@ -20,7 +28,7 @@ resource "aws_key_pair" "deployer" {
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound traffic"
-  vpc_id      = data.aws_vpc.default.id  # Reference the default VPC ID
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 3000
@@ -38,7 +46,7 @@ resource "aws_security_group" "allow_http" {
 }
 
 resource "aws_instance" "app" {
-  ami           = "ami-012c2e8e24e2ae21d" # Amazon Linux 2 AMI
+  ami           = "ami-012c2e8e24e2ae21d"  # Verify the AMI ID for your region
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
