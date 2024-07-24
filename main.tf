@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-southeast-1"  # Ensure this is the correct region for your resources
+  region = "ap-southeast-1"
 }
 
 data "aws_vpc" "default" {
@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http1" {
-  name        = "allow_http1"
+resource "aws_security_group" "allow_http4" {
+  name        = "allow_http4"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -43,12 +43,12 @@ resource "aws_security_group" "allow_http1" {
   }
 }
 
-resource "aws_instance" "app1" {
-  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
+resource "aws_launch_configuration" "app" {
+  name          = "app-launch-configuration"
+  image_id      = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
-
-  vpc_security_group_ids = [aws_security_group.allow_http1.id]
+  security_groups = [aws_security_group.allow_http4.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -71,7 +71,7 @@ resource "aws_instance" "app1" {
               sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
 
               echo "Adding instance identifier..."
-              echo "This is instance 1" > /var/www/html/index.html
+              echo "This is instance \$(curl -s http://169.254.169.254/latest/meta-data/instance-id)" > /var/www/html/index.html
 
               echo "Checking Docker status..."
               sudo systemctl status docker
@@ -82,59 +82,33 @@ resource "aws_instance" "app1" {
               echo "Checking Docker container logs..."
               sudo docker logs rest-api-service
               EOF
-
-  tags = {
-    Name = "REST API Service 1"
-  }
 }
 
-resource "aws_instance" "app2" {
-  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
-  instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer.key_name
+resource "aws_autoscaling_group" "app" {
+  launch_configuration = aws_launch_configuration.app.id
+  min_size             = 2
+  max_size             = 4
+  desired_capacity     = 2
+  vpc_zone_identifier  = data.aws_vpc.default.subnets
 
-  vpc_security_group_ids = [aws_security_group.allow_http1.id]
+  tag {
+    key                 = "Name"
+    value               = "REST API Service"
+    propagate_at_launch = true
+  }
 
-  user_data = <<-EOF
-              #!/bin/bash
-              set -e
+  lifecycle {
+    create_before_destroy = true
+  }
 
-              echo "Updating system packages..."
-              sudo yum update -y
-
-              echo "Installing Docker..."
-              sudo yum install -y docker
-
-              echo "Starting Docker service..."
-              sudo systemctl start docker
-              sudo systemctl enable docker
-
-              echo "Adding ec2-user to Docker group..."
-              sudo usermod -aG docker ec2-user
-
-              echo "Running Docker container..."
-              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
-
-              echo "Adding instance identifier..."
-              echo "This is instance 2" > /var/www/html/index.html
-
-              echo "Checking Docker status..."
-              sudo systemctl status docker
-
-              echo "Checking running containers..."
-              sudo docker ps
-
-              echo "Checking Docker container logs..."
-              sudo docker logs rest-api-service
-              EOF
-
-  tags = {
-    Name = "REST API Service 2"
+  # Attach the Auto Scaling group to the ELB
+  load_balancer {
+    name = aws_elb.main.name
   }
 }
 
 resource "aws_elb" "main" {
-  name               = "jaime-application-load-balancer"
+  name               = "jaime-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -152,14 +126,48 @@ resource "aws_elb" "main" {
     unhealthy_threshold = 2
   }
 
-  instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.allow_http2.id]
+  security_groups             = [aws_security_group.allow_http4.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaime-application-load-balancer"
+    Name = "jaime-load-balancer"
   }
+}
+
+# CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "high_cpu" {
+  alarm_name                = "high-cpu-utilization"
+  alarm_description         = "This metric monitors EC2 instance CPU utilization"
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = "2"
+  metric_name               = "CPUUtilization"
+  namespace                 = "AWS/EC2"
+  period                    = "300"
+  statistic                 = "Average"
+  threshold                 = "75"
+  alarm_actions             = [aws_autoscaling_policy.scale_up.arn]
+  ok_actions                = [aws_autoscaling_policy.scale_down.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.app.name
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "scale-up"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = aws_autoscaling_group.app.name
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "scale-down"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = aws_autoscaling_group.app.name
 }
