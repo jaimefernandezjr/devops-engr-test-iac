@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http2" {
-  name        = "allow_http2"
+resource "aws_security_group" "allow_http1" {
+  name        = "allow_http1"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -48,7 +48,7 @@ resource "aws_instance" "app1" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http2.id]
+  vpc_security_group_ids = [aws_security_group.allow_http1.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -93,7 +93,7 @@ resource "aws_instance" "app2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http2.id]
+  vpc_security_group_ids = [aws_security_group.allow_http1.id]
 
   user_data = <<-EOF
               #!/bin/bash
