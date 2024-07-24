@@ -1,12 +1,3 @@
-terraform {
-  backend "s3" {
-    bucket         = "devops-test-tfstate-bucket"
-    key            = "terraform/statefile.tfstate"
-    region         = "ap-southeast-1"
-    dynamodb_table = "terraform-locks"
-  }
-}
-
 provider "aws" {
   region = "ap-southeast-1"  # Ensure this is the correct region for your resources
 }
