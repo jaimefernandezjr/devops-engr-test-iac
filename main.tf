@@ -11,6 +11,11 @@ variable "public_ssh_key" {
   type        = string
 }
 
+variable "docker_username" {
+  description = "Docker username"
+  type        = string
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = var.public_ssh_key
@@ -68,7 +73,7 @@ resource "aws_instance" "app1" {
               sudo usermod -aG docker ec2-user
 
               echo "Running Docker container..."
-              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+              sudo docker run -d -p 3000:3000 --name rest-api-service ${var.docker_username}/devops-test-rest-api-service:latest
 
               echo "Adding instance identifier..."
               echo "This is instance 1" > /var/www/html/index.html
@@ -113,7 +118,7 @@ resource "aws_instance" "app2" {
               sudo usermod -aG docker ec2-user
 
               echo "Running Docker container..."
-              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+              sudo docker run -d -p 3000:3000 --name rest-api-service ${var.docker_username}/devops-test-rest-api-service:latest
 
               echo "Adding instance identifier..."
               echo "This is instance 2" > /var/www/html/index.html
