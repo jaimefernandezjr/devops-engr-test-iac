@@ -1,20 +1,19 @@
 provider "aws" {
-  region = "ap-southeast-1"
+  region = "us-east-1"
 }
 
-variable "public_key" {
-  description = "Public key for SSH access"
-  type        = string
-}
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
 
-resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
-  public_key = var.public_key
+  tags = {
+    Name = "main-vpc"
+  }
 }
 
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound traffic"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 3000
@@ -36,7 +35,7 @@ resource "aws_instance" "app" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  security_groups = [aws_security_group.allow_http.name]
+  vpc_security_group_ids = [aws_security_group.allow_http.id]
 
   user_data = <<-EOF
               #!/bin/bash
