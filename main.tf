@@ -6,6 +6,10 @@ data "aws_vpc" "default" {
   default = true
 }
 
+data "aws_subnet_ids" "default" {
+  vpc_id = data.aws_vpc.default.id
+}
+
 variable "public_ssh_key" {
   description = "Public SSH key for EC2 key pair"
   type        = string
@@ -89,7 +93,7 @@ resource "aws_autoscaling_group" "app" {
   min_size             = 2
   max_size             = 4
   desired_capacity     = 2
-  vpc_zone_identifier  = data.aws_vpc.default.subnets
+  vpc_zone_identifier  = data.aws_subnet_ids.default.ids
 
   tag {
     key                 = "Name"
