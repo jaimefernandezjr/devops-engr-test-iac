@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http2" {
-  name        = "allow_http2"
+resource "aws_security_group" "allow_http" {
+  name        = "allow_http"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -41,16 +41,36 @@ resource "aws_instance" "app" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http2.id]
+  vpc_security_group_ids = [aws_security_group.allow_http.id]
 
   user_data = <<-EOF
               #!/bin/bash
+              set -e
+
+              echo "Updating system packages..."
               yum update -y
+
+              echo "Installing Docker..."
               yum install -y docker
+
+              echo "Starting Docker service..."
               systemctl start docker
               systemctl enable docker
+
+              echo "Adding ec2-user to Docker group..."
               usermod -aG docker ec2-user
-              docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+
+              echo "Running Docker container..."
+              docker run -d -p 3000:3000 --name rest-api-service YOUR_DOCKERHUB_USERNAME/devops-test-rest-api-service:latest
+
+              echo "Checking Docker status..."
+              systemctl status docker
+
+              echo "Checking running containers..."
+              docker ps
+
+              echo "Checking Docker container logs..."
+              docker logs rest-api-service
               EOF
 
   tags = {
