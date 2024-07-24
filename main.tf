@@ -61,7 +61,7 @@ resource "aws_instance" "app" {
               usermod -aG docker ec2-user
 
               echo "Running Docker container..."
-              docker run -d -p 3000:3000 --name rest-api-service YOUR_DOCKERHUB_USERNAME/devops-test-rest-api-service:latest
+              docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
 
               echo "Checking Docker status..."
               systemctl status docker
