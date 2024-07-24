@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-southeast-1"  # Ensure this is the correct region for your resources
+  region = "ap-southeast-1" 
 }
 
 data "aws_vpc" "default" {
@@ -21,9 +21,9 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http6" {
-  name        = "allow_http6"
-  description = "Allow HTTP inbound traffic"
+resource "aws_security_group" "sg_restrict_traffic" {
+  name        = "sg_restrict_traffic"
+  description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -40,6 +40,13 @@ resource "aws_security_group" "allow_http6" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -49,11 +56,11 @@ resource "aws_security_group" "allow_http6" {
 }
 
 resource "aws_instance" "app1" {
-  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
+  ami           = "ami-012c2e8e24e2ae21d"  
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http6.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -98,7 +105,7 @@ resource "aws_instance" "app2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http6.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -158,7 +165,7 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.allow_http6.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
