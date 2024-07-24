@@ -1,16 +1,9 @@
 provider "aws" {
-  region = "ap-southeast-1"
+  region = "ap-southeast-1"  # Ensure this is the correct region for your resources
 }
 
 data "aws_vpc" "default" {
   default = true
-}
-
-data "aws_subnets" "default" {
-  filters {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
 }
 
 variable "public_ssh_key" {
@@ -96,7 +89,7 @@ resource "aws_autoscaling_group" "app" {
   min_size             = 2
   max_size             = 4
   desired_capacity     = 2
-  vpc_zone_identifier  = data.aws_subnets.default.ids
+  vpc_zone_identifier  = data.aws_vpc.default.subnets
 
   tag {
     key                 = "Name"
@@ -110,8 +103,8 @@ resource "aws_autoscaling_group" "app" {
 }
 
 resource "aws_elb" "main" {
-  name               = "main-load-balancer"
-  availability_zones = data.aws_subnets.default.availability_zones
+  name               = "jaime-load-balancer"
+  availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
     instance_port     = 3000
@@ -128,6 +121,7 @@ resource "aws_elb" "main" {
     unhealthy_threshold = 2
   }
 
+  instances                   = aws_autoscaling_group.app.instances
   security_groups             = [aws_security_group.allow_http4.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
@@ -135,46 +129,6 @@ resource "aws_elb" "main" {
   connection_draining_timeout = 400
 
   tags = {
-    Name = "main-load-balancer"
+    Name = "jaime-load-balancer"
   }
-}
-
-resource "aws_autoscaling_attachment" "app" {
-  autoscaling_group_name = aws_autoscaling_group.app.name
-  elb                    = aws_elb.main.name
-}
-
-# CloudWatch Alarms
-resource "aws_cloudwatch_metric_alarm" "high_cpu" {
-  alarm_name                = "high-cpu-utilization"
-  alarm_description         = "This metric monitors EC2 instance CPU utilization"
-  comparison_operator       = "GreaterThanOrEqualToThreshold"
-  evaluation_periods        = "2"
-  metric_name               = "CPUUtilization"
-  namespace                 = "AWS/EC2"
-  period                    = "300"
-  statistic                 = "Average"
-  threshold                 = "75"
-  alarm_actions             = [aws_autoscaling_policy.scale_up.arn]
-  ok_actions                = [aws_autoscaling_policy.scale_down.arn]
-
-  dimensions = {
-    AutoScalingGroupName = aws_autoscaling_group.app.name
-  }
-}
-
-resource "aws_autoscaling_policy" "scale_up" {
-  name                   = "scale-up"
-  scaling_adjustment     = 1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.app.name
-}
-
-resource "aws_autoscaling_policy" "scale_down" {
-  name                   = "scale-down"
-  scaling_adjustment     = -1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.app.name
 }
