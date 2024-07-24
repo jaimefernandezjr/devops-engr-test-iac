@@ -6,15 +6,8 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet" "default_subnet_1" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-data "aws_subnet" "default_subnet_2" {
-  filter {
+data "aws_subnets" "default" {
+  filters {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
@@ -103,7 +96,7 @@ resource "aws_autoscaling_group" "app" {
   min_size             = 2
   max_size             = 4
   desired_capacity     = 2
-  vpc_zone_identifier  = [data.aws_subnet.default_subnet_1.id, data.aws_subnet.default_subnet_2.id]
+  vpc_zone_identifier  = data.aws_subnets.default.ids
 
   tag {
     key                 = "Name"
@@ -118,7 +111,7 @@ resource "aws_autoscaling_group" "app" {
 
 resource "aws_elb" "main" {
   name               = "main-load-balancer"
-  availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
+  availability_zones = data.aws_subnets.default.availability_zones
 
   listener {
     instance_port     = 3000
