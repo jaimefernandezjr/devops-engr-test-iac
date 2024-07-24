@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-southeast-1"
+  region = "ap-southeast-1"  # Ensure this is the correct region for your resources
 }
 
 data "aws_vpc" "default" {
@@ -11,25 +11,12 @@ variable "public_ssh_key" {
   type        = string
 }
 
-data "aws_key_pair" "existing_keypair" {
-  key_name = "deployer-key"
-}
-
 resource "aws_key_pair" "deployer" {
-  count      = data.aws_key_pair.existing_keypair.key_name == "" ? 1 : 0
   key_name   = "deployer-key"
   public_key = var.public_ssh_key
 }
 
-data "aws_security_group" "existing_sg" {
-  filter {
-    name   = "group-name"
-    values = ["allow_http5"]
-  }
-}
-
 resource "aws_security_group" "allow_http5" {
-  count       = length(data.aws_security_group.existing_sg.ids) == 0 ? 1 : 0
   name        = "allow_http5"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
@@ -52,9 +39,9 @@ resource "aws_security_group" "allow_http5" {
 resource "aws_instance" "app" {
   ami           = "ami-012c2e8e24e2ae21d"  # Verify the AMI ID for your region
   instance_type = "t2.micro"
-  key_name      = coalesce(data.aws_key_pair.existing_keypair.key_name, aws_key_pair.deployer[0].key_name)
+  key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [coalesce(data.aws_security_group.existing_sg.id, aws_security_group.allow_http5[0].id)]
+  vpc_security_group_ids = [aws_security_group.allow_http5.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -89,4 +76,4 @@ resource "aws_instance" "app" {
   tags = {
     Name = "REST API Service"
   }
-}
+} 
