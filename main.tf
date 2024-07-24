@@ -16,14 +16,21 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http4" {
-  name        = "allow_http4"
+resource "aws_security_group" "allow_http3" {
+  name        = "allow_http3"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 3000
     to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -41,7 +48,7 @@ resource "aws_instance" "app" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http4.id]
+  vpc_security_group_ids = [aws_security_group.allow_http3.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -75,5 +82,36 @@ resource "aws_instance" "app" {
 
   tags = {
     Name = "REST API Service"
+  }
+}
+
+resource "aws_elb" "main" {
+  name               = "main-load-balancer"
+  availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
+
+  listener {
+    instance_port     = 3000
+    instance_protocol = "HTTP"
+    lb_port           = 80
+    lb_protocol       = "HTTP"
+  }
+
+  health_check {
+    target              = "HTTP:3000/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
+  instances                   = [aws_instance.app.id]
+  security_groups             = [aws_security_group.allow_http3.id]
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 400
+
+  tags = {
+    Name = "main-load-balancer"
   }
 }
