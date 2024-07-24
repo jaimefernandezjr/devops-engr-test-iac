@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http5" {
-  name        = "allow_http5"
+resource "aws_security_group" "allow_http4" {
+  name        = "allow_http4"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -37,41 +37,47 @@ resource "aws_security_group" "allow_http5" {
 }
 
 resource "aws_instance" "app" {
-  ami           = "ami-012c2e8e24e2ae21d"  # Verify the AMI ID for your region
+  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http5.id]
+  vpc_security_group_ids = [aws_security_group.allow_http4.id]
 
   user_data = <<-EOF
               #!/bin/bash
               set -e
 
               echo "Updating system packages..."
-              yum update -y
+              sudo yum update -y
 
               echo "Installing Docker..."
-              yum install -y docker
+              sudo yum install -y docker
 
               echo "Starting Docker service..."
-              systemctl start docker
-              systemctl enable docker
+              sudo systemctl start docker
+              sudo systemctl enable docker
 
               echo "Adding ec2-user to Docker group..."
-              usermod -aG docker ec2-user
+              sudo usermod -aG docker ec2-user
 
               echo "Running Docker container..."
-              docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
 
               echo "Checking Docker status..."
-              systemctl status docker
+              sudo systemctl status docker
 
               echo "Checking running containers..."
-              docker ps
+              sudo docker ps
 
               echo "Checking Docker container logs..."
-              docker logs rest-api-service
+              sudo docker logs rest-api-service
               EOF
+
+  tags = {
+    Name = "REST API Service"
+  }
+}
+
 
   tags = {
     Name = "REST API Service"
