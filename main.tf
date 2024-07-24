@@ -6,11 +6,16 @@ data "aws_vpc" "default" {
   default = true
 }
 
-resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
-  public_key = file("path/to/your/public/keyfile.pub")  # Ensure this path is correct
+variable "public_ssh_key" {
+  description = "Public SSH key for EC2 key pair"
+  type        = string
+  default     = ""
 }
 
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = var.public_ssh_key
+}
 
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
