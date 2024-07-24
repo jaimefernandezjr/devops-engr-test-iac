@@ -16,8 +16,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "allow_http2" {
-  name        = "allow_http2"
+resource "aws_security_group" "allow_http6" {
+  name        = "allow_http6"
   description = "Allow HTTP inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -48,7 +48,7 @@ resource "aws_instance" "app1" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http2.id]
+  vpc_security_group_ids = [aws_security_group.allow_http6.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -93,14 +93,39 @@ resource "aws_instance" "app2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.allow_http2.id]
+  vpc_security_group_ids = [aws_security_group.allow_http6.id]
 
   user_data = <<-EOF
               #!/bin/bash
               set -e
 
-              echo "Provisioning complete. Ansible will configure the resources"
-              
+              echo "Updating system packages..."
+              sudo yum update -y
+
+              echo "Installing Docker..."
+              sudo yum install -y docker
+
+              echo "Starting Docker service..."
+              sudo systemctl start docker
+              sudo systemctl enable docker
+
+              echo "Adding ec2-user to Docker group..."
+              sudo usermod -aG docker ec2-user
+
+              echo "Running Docker container..."
+              sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
+
+              echo "Adding instance identifier..."
+              echo "This is instance 2" > /var/www/html/index.html
+
+              echo "Checking Docker status..."
+              sudo systemctl status docker
+
+              echo "Checking running containers..."
+              sudo docker ps
+
+              echo "Checking Docker container logs..."
+              sudo docker logs rest-api-service
               EOF
 
   tags = {
@@ -109,7 +134,7 @@ resource "aws_instance" "app2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "main-load-balancer"
+  name               = "jaime-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -128,22 +153,13 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.allow_http2.id]
+  security_groups             = [aws_security_group.allow_http6.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "main-load-balancer"
-  }
-}
-
-  provisioner "local-exec" {
-    command = "ansible-playbook -i ${self.private_ip}, playbook.yml"
-  }
-
-  output "instance_private_ips" {
-    value = aws_instance.app[*].private_ip
+    Name = "jaime-load-balancer"
   }
 }
