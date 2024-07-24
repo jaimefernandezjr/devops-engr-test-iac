@@ -44,7 +44,7 @@ resource "aws_instance" "app" {
               amazon-linux-extras install docker -y
               service docker start
               usermod -a -G docker ec2-user
-              docker run -d -p 3000:3000 --name rest-api-service YOUR_DOCKERHUB_USERNAME/rest-api-service:latest
+              docker run -d -p 3000:3000 --name rest-api-service YOUR_DOCKERHUB_USERNAME/devops-test-rest-api-service:latest
               EOF
 
   tags = {
