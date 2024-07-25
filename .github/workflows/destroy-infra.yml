@@ -28,7 +28,7 @@ jobs:
         tf_actions_subcommand: 'init'
         tf_actions_working_dir: '.'
         tf_actions_comment: true
-        args: '-var="instance_type=t2.medium"'
+        args: '-var="instance_type=t2.micro"'
     
     - name: Terraform plan
       uses: hashicorp/terraform-github-actions@master
@@ -37,7 +37,7 @@ jobs:
         tf_actions_subcommand: 'plan'
         tf_actions_working_dir: '.'
         tf_actions_comment: true
-        args: '-var="instance_type=t2.medium"'
+        args: '-var="instance_type=t2.micro"'
       
     - name: Terraform apply
       if: ${{ github.event.inputs.terraform_action == 'apply' }}
@@ -47,7 +47,7 @@ jobs:
         tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
         tf_actions_working_dir: '.'
         tf_actions_comment: true
-        args: '-auto-approve -var="instance_type=t2.medium"'
+        args: '-auto-approve -var="instance_type=t2.micro"'
     
     - name: Terraform destroy
       if: ${{ github.event.inputs.terraform_action == 'destroy' }}
@@ -57,4 +57,4 @@ jobs:
         tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
         tf_actions_working_dir: '.'
         tf_actions_comment: true
-        args: '-auto-approve -var="instance_type=t2.medium"'
+        args: '-auto-approve -var="instance_type=t2.micro"'
