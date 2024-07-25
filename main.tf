@@ -7,7 +7,7 @@ terraform {
     bucket = "devops-test-tfstate-bucket2"
     key    = "terraform/state"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks"
+    dynamodb_table = "terraform-locks2"
   }
 }
 
