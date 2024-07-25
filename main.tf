@@ -25,8 +25,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic5" {
-  name        = "sg_restrict_traffic5"
+resource "aws_security_group" "sg_restrict_traffic6" {
+  name        = "sg_restrict_traffic6"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -64,7 +64,7 @@ resource "aws_instance" "app1" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic5.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic6.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -109,7 +109,7 @@ resource "aws_instance" "app2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic5.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic6.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -150,7 +150,7 @@ resource "aws_instance" "app2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaime-load-balancer"
+  name               = "jaimef-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -169,13 +169,13 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.sg_restrict_traffic5.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic6.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaime-load-balancer"
+    Name = "jaimef-load-balancer"
   }
 }
