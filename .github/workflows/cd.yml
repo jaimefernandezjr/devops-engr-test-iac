@@ -69,8 +69,6 @@ jobs:
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: 0.14.3
-          tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
-          tf_actions_comment: true
           args: '-auto-approve -var "public_ssh_key=${{ secrets.AWS_KEYPAIR }}'
         env:
           TF_VAR_docker_username: ${{ secrets.DOCKER_USERNAME }}
@@ -81,6 +79,4 @@ jobs:
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: 0.14.3
-          tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
-          tf_actions_comment: true
           args: '-auto-approve'
