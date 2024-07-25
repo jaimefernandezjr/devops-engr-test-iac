@@ -29,4 +29,6 @@ jobs:
 
     - name: Terraform Destroy
       uses: hashicorp/terraform-github-actions@master
-
+      with:
+        tf_actions_subcommand: 'destroy'
+        args: '-auto-approve'
