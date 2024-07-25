@@ -4,14 +4,6 @@ on:
   repository_dispatch:
     types: [ci-completed]
   workflow_dispatch:
-    inputs:
-      terraform_action:
-        type: choice
-        description: select terraform action
-        options:
-        - apply
-        - destroy
-        required: true
 
 jobs:
   setup:
@@ -56,29 +48,11 @@ jobs:
         uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: 0.14.3
-          tf_actions_subcommand: 'init'
-          tf_actions_working_dir: '.'
-          tf_actions_comment: true
-          args: '-var="instance_type=t2.micro"'
+        run:
+          terraform init
+
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.terraform_action == 'apply' }}
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: 0.14.3
-          tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
-          args: '-auto-approve -var "public_ssh_key=${{ secrets.AWS_KEYPAIR }}'
+        run: terraform apply -auto-approve -var "public_ssh_key=${{ secrets.AWS_KEYPAIR }}"
         env:
           TF_VAR_docker_username: ${{ secrets.DOCKER_USERNAME }}
-
-    
-      - name: Terraform destroy
-        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: 0.14.3
-          tf_actions_subcommand: ${{ github.event.inputs.terraform_action }}
-          args: '-auto-approve'
