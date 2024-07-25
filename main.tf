@@ -4,10 +4,10 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "devops-test-tfstate-bucket4"
-    key    = "terraform/state"
+    bucket = "devops-test-tfstate-bucket5"
+    key    = "devops-test.tfstate"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks4"
+    dynamodb_table = "terraform-locks5"
   }
 }
 
@@ -20,13 +20,13 @@ variable "public_ssh_key" {
   type        = string
 }
 
-resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
+resource "aws_key_pair" "deployer2" {
+  key_name   = "deployer2-key"
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic7" {
-  name        = "sg_restrict_traffic7"
+resource "aws_security_group" "sg_restrict_traffic8" {
+  name        = "sg_restrict_traffic8"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -62,9 +62,9 @@ resource "aws_security_group" "sg_restrict_traffic7" {
 resource "aws_instance" "ec2_1" {
   ami           = "ami-012c2e8e24e2ae21d"  
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = aws_key_pair.deployer2.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic7.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic8.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -104,9 +104,9 @@ resource "aws_instance" "ec2_1" {
 resource "aws_instance" "ec2_2" {
   ami           = "ami-012c2e8e24e2ae21d" 
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = aws_key_pair.deployer2.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic7.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic8.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -144,7 +144,7 @@ resource "aws_instance" "ec2_2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaimejr-load-balancer"
+  name               = "jaimejrf-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -163,13 +163,13 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.ec2_1.id, aws_instance.ec2_2.id]
-  security_groups             = [aws_security_group.sg_restrict_traffic7.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic8.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaimejr-load-balancer"
+    Name = "jaimejrf-load-balancer"
   }
 }
