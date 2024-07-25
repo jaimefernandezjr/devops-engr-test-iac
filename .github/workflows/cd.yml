@@ -22,12 +22,12 @@ jobs:
 
       - name: Create S3 bucket
         run: |
-          aws s3api create-bucket --bucket devops-test-tfstate-bucket4 --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
+          aws s3api create-bucket --bucket devops-test-tfstate-bucket5 --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
 
       - name: Create DynamoDB table
         run: |
           aws dynamodb create-table \
-            --table-name terraform-locks4 \
+            --table-name terraform-locks5 \
             --attribute-definitions AttributeName=LockID,AttributeType=S \
             --key-schema AttributeName=LockID,KeyType=HASH \
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
