@@ -2,6 +2,15 @@ provider "aws" {
   region = "ap-southeast-1" 
 }
 
+terraform {
+  backend "s3" {
+    bucket = "devops-test-tfstate-bucket1"
+    key    = "terraform/state"
+    region = "ap-southeast-1"
+    dynamodb_table = "terraform-locks"
+  }
+}
+
 data "aws_vpc" "default" {
   default = true
 }
