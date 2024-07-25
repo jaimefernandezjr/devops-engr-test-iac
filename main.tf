@@ -155,7 +155,7 @@ resource "aws_instance" "app2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaime-load-balancer"
+  name               = "jaimejr-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -181,6 +181,6 @@ resource "aws_elb" "main" {
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaime-load-balancer"
+    Name = "jaimejr-load-balancer"
   }
 }
