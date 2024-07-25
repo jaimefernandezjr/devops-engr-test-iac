@@ -4,10 +4,10 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "devops-test-tfstate-bucket3"
+    bucket = "devops-test-tfstate-bucket4"
     key    = "terraform/state"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks3"
+    dynamodb_table = "terraform-locks4"
   }
 }
 
@@ -25,8 +25,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic6" {
-  name        = "sg_restrict_traffic6"
+resource "aws_security_group" "sg_restrict_traffic7" {
+  name        = "sg_restrict_traffic7"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -59,12 +59,12 @@ resource "aws_security_group" "sg_restrict_traffic6" {
   }
 }
 
-resource "aws_instance" "app1" {
+resource "aws_instance" "ec2_1" {
   ami           = "ami-012c2e8e24e2ae21d"  
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic6.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic7.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -85,9 +85,6 @@ resource "aws_instance" "app1" {
 
               echo "Running Docker container..."
               sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
-
-              echo "Adding instance identifier..."
-              echo "This is instance 1" > /var/www/html/index.html
 
               echo "Checking Docker status..."
               sudo systemctl status docker
@@ -104,12 +101,12 @@ resource "aws_instance" "app1" {
   }
 }
 
-resource "aws_instance" "app2" {
+resource "aws_instance" "ec2_2" {
   ami           = "ami-012c2e8e24e2ae21d" 
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic6.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic7.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -130,9 +127,6 @@ resource "aws_instance" "app2" {
 
               echo "Running Docker container..."
               sudo docker run -d -p 3000:3000 --name rest-api-service jaimejr551/devops-test-rest-api-service:latest
-
-              echo "Adding instance identifier..."
-              echo "This is instance 2" > /var/www/html/index.html
 
               echo "Checking Docker status..."
               sudo systemctl status docker
@@ -150,7 +144,7 @@ resource "aws_instance" "app2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaimef-load-balancer"
+  name               = "jaimejr-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -168,14 +162,14 @@ resource "aws_elb" "main" {
     unhealthy_threshold = 2
   }
 
-  instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.sg_restrict_traffic6.id]
+  instances                   = [aws_instance.ec2_1.id, aws_instance.ec2_2.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic7.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaimef-load-balancer"
+    Name = "jaimejr-load-balancer"
   }
 }
