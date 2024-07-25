@@ -110,7 +110,7 @@ resource "aws_instance" "app1" {
 }
 
 resource "aws_instance" "app2" {
-  ami           = "ami-012c2e8e24e2ae21d"  # Update with your Amazon Linux 2023 AMI ID
+  ami           = "ami-012c2e8e24e2ae21d" 
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
