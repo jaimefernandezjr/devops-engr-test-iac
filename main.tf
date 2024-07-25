@@ -30,8 +30,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic" {
-  name        = "sg_restrict_traffic"
+resource "aws_security_group" "sg_restrict_traffic2" {
+  name        = "sg_restrict_traffic2"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -69,7 +69,7 @@ resource "aws_instance" "app1" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic2.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -114,7 +114,7 @@ resource "aws_instance" "app2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic2.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -174,7 +174,7 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.app1.id, aws_instance.app2.id]
-  security_groups             = [aws_security_group.sg_restrict_traffic.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic2.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
