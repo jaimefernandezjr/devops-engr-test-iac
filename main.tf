@@ -4,10 +4,10 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "devops-test-tfstate-bucket5"
+    bucket = "devops-test-tfstate-bucket6"
     key    = "devops-test.tfstate"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks5"
+    dynamodb_table = "terraform-locks6"
   }
 }
 
@@ -25,8 +25,8 @@ resource "aws_key_pair" "deployer2" {
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic8" {
-  name        = "sg_restrict_traffic8"
+resource "aws_security_group" "sg_restrict_traffic1" {
+  name        = "sg_restrict_traffic1"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -65,7 +65,7 @@ resource "aws_instance" "ec2" {
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer2.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic8.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic1.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -103,7 +103,7 @@ resource "aws_instance" "ec2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaimejrf-load-balancer"
+  name               = "jaimejr-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -122,13 +122,13 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.ec2[0].id, aws_instance.ec2[1].id]
-  security_groups             = [aws_security_group.sg_restrict_traffic8.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic1.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaimejrf-load-balancer"
+    Name = "jaimejr-load-balancer"
   }
 }
