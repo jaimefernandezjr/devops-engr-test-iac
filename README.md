@@ -1,7 +1,7 @@
 # Rest API Service Continuous Deployment on AWS with Terraform and GitHub Actions
 
 ## Overview
-This is the continuous deployment part of the CI/CD for Deploying REST API Service on AWS with GitHub Actions and Terraform that is located in the https://github.com/jaimefernandezjr/devops-engr-test repository. The GitHub Actions workflow provisions AWS resources using Terraform to allow the application be deployed in the AWS cloud.
+This is the continuous deployment part of the CI/CD pipeline for deploying the REST API service on AWS using GitHub Actions and Terraform, located in the https://github.com/jaimefernandezjr/devops-engr-test repository. The GitHub Actions workflow provisions AWS resources using Terraform to allow the application to be deployed in the AWS cloud.
 
 ## The Terraform file
 This Terraform configuration:
