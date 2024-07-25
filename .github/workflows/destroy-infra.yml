@@ -1,35 +1,60 @@
-name: Destroy Infrastructure
+name: CD 
 
 on:
+  repository_dispatch:
+    types: [ci-completed]
   workflow_dispatch:
 
 jobs:
-  destroy:
+  setup:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up AWS CLI
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-southeast-1
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v2
+      - name: Create S3 bucket
+        run: |
+          aws s3api create-bucket --bucket devops-test-tfstate-bucket1 --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1 || echo "Bucket might already exist."
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Create DynamoDB table
+        run: |
+          aws dynamodb create-table \
+            --table-name terraform-locks \
+            --attribute-definitions AttributeName=LockID,AttributeType=S \
+            --key-schema AttributeName=LockID,KeyType=HASH \
+            --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+            --region ap-southeast-1 || echo "Table might already exist."
 
-    - name: Show Destroy plan
-      run: terraform plan -destroy
-      continue-on-error: true
+  deploy:
+    runs-on: ubuntu-latest
+    needs: setup
 
-    - name: Terraform Destroy
-      run: terraform destroy -auto-approve
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Terraform Init
+        run: terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var "public_ssh_key=${{ secrets.AWS_KEYPAIR }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_docker_username: ${{ secrets.DOCKER_USERNAME }}
