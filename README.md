@@ -24,6 +24,7 @@ This workflow does the following:
 Currently, the terraform destroy command does not successfully remove all resources due to a problem. The workflow takes too long to execute the terraform apply step, particularly during or after the acquisition of the public SSH key. To clean up, I manually delete the resources from the AWS Management Console for the mean time while trying to solve the issue.
 
 ## Future Improvements
+When the application became popular, I think these are good improvements: 
 - Implement auto-scaling for the EC2 instances.
 - Use Ansible for configuration management when things get complex.
 - Add automated tests for the infrastructure.
