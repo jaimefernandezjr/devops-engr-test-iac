@@ -4,10 +4,10 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "devops-test-tfstate-bucket"
+    bucket = "devops-test-tfstate-bucket1"
     key    = "devops-test.tfstate"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks"
+    dynamodb_table = "terraform-locks1"
   }
 }
 
@@ -20,13 +20,13 @@ variable "public_ssh_key" {
   type        = string
 }
 
-resource "aws_key_pair" "deployer2" {
-  key_name   = "deployer2-key"
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
   public_key = var.public_ssh_key
 }
 
-resource "aws_security_group" "sg_restrict_traffic1" {
-  name        = "sg_restrict_traffic1"
+resource "aws_security_group" "sg_restrict_traffic" {
+  name        = "sg_restrict_traffic"
   description = "Restrict inbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -63,9 +63,9 @@ resource "aws_instance" "ec2" {
   count         = 2
   ami           = "ami-012c2e8e24e2ae21d"  
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer2.key_name
+  key_name      = aws_key_pair.deployer.key_name
 
-  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic1.id]
+  vpc_security_group_ids = [aws_security_group.sg_restrict_traffic.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -103,7 +103,7 @@ resource "aws_instance" "ec2" {
 }
 
 resource "aws_elb" "main" {
-  name               = "jaimejr-load-balancer"
+  name               = "jaime-load-balancer"
   availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
 
   listener {
@@ -122,13 +122,13 @@ resource "aws_elb" "main" {
   }
 
   instances                   = [aws_instance.ec2[0].id, aws_instance.ec2[1].id]
-  security_groups             = [aws_security_group.sg_restrict_traffic1.id]
+  security_groups             = [aws_security_group.sg_restrict_traffic.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "jaimejr-load-balancer"
+    Name = "jaime-load-balancer"
   }
 }
