@@ -4,10 +4,10 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "devops-test-tfstate-bucket6"
+    bucket = "devops-test-tfstate-bucket"
     key    = "devops-test.tfstate"
     region = "ap-southeast-1"
-    dynamodb_table = "terraform-locks6"
+    dynamodb_table = "terraform-locks"
   }
 }
 
